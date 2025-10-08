@@ -3,7 +3,7 @@ version: "3.8"
 
 services:
   steam-headless:
-    image: josh5/steam-headless:centos
+    image: ghcr.io/thisisqasim/steam-headless:centos
     restart: unless-stopped
     shm_size: ${SHM_SIZE}
     ipc: host # Could also be set to 'shareable'

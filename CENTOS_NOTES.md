@@ -125,7 +125,7 @@ Use the CentOS-specific compose file:
 ```yaml
 services:
   steam-headless:
-    image: josh5/steam-headless:centos
+    image: ghcr.io/thisisqasim/steam-headless:centos
     # ... rest of configuration
 ```
 
@@ -147,9 +147,8 @@ This ensures the CentOS variant is built alongside Debian and Arch variants.
 ## Image Tags
 
 The CentOS variant will be available as:
-- `josh5/steam-headless:centos` (stable)
-- `josh5/steam-headless:centos-staging` (development)
-- `ghcr.io/thisisqasim/steam-headless:centos` (GitHub Container Registry)
+- `ghcr.io/thisisqasim/steam-headless:centos` (stable)
+- `ghcr.io/thisisqasim/steam-headless:centos-staging` (development)
 
 ## Notes
 
