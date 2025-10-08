@@ -14,7 +14,7 @@ RUN \
         && dnf config-manager --set-enabled crb \
     && \
     echo "**** Install build dependencies ****" \
-        && dnf -y install \
+        && dnf -y install --allowerasing \
             git \
             cmake \
             gcc \
