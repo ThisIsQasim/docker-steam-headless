@@ -3,7 +3,7 @@ name: Build and Deploy CI
 on:
   workflow_dispatch:
   push:
-    branches: ['dev-**', 'pr-**', staging, master]
+    branches: ['dev-**', 'pr-**', master]
     tags: ['**']
   pull_request:
     branches: [staging, master]
