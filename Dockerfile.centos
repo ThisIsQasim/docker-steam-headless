@@ -1,105 +1,59 @@
 # Multi-stage build for Sunshine on CentOS Stream 9
 FROM quay.io/centos/centos:stream9 AS base
 
+# Enable package repos
+RUN \
+    echo "**** Enable EPEL and CRB repositories ****" \
+        && dnf config-manager --set-enabled crb \
+        && dnf -y install epel-release
+
 # Builder stage
 FROM base AS sunshine-builder
 
-# Install build dependencies for Sunshine
-RUN \
-    echo "**** Update package manager ****" \
-        && dnf -y update \
-    && \
-    echo "**** Enable EPEL and CRB repositories ****" \
-        && dnf -y install epel-release \
-        && dnf config-manager --set-enabled crb \
-    && \
-    echo "**** Enable RPM Fusion for FFmpeg ****" \
-        && dnf -y install \
-            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
-    && \
-    echo "**** Install build dependencies ****" \
-        && dnf -y install \
-            git \
-            cmake \
-            gcc \
-            gcc-c++ \
-            make \
-            rpm-build \
-            doxygen \
-            graphviz \
-            pkg-config \
-            boost-devel \
-            opus-devel \
-            libva-devel \
-            libvdpau-devel \
-            libX11-devel \
-            libxcb-devel \
-            libXfixes-devel \
-            libXrandr-devel \
-            libXtst-devel \
-            mesa-libGL-devel \
-            openssl-devel \
-            pulseaudio-libs-devel \
-            libcurl-devel \
-            libdrm-devel \
-            libcap-devel \
-            wayland-devel \
-            wayland-protocols-devel \
-            miniupnpc-devel \
-            avahi-devel \
-            libappindicator-gtk3-devel \
-            libnotify-devel \
-            numactl-devel \
-            libevdev-devel \
-            systemd-devel \
-            ffmpeg-free \
-            ffmpeg-free-devel \
-    && \
-    echo "**** Install Node.js for web UI ****" \
-        && dnf -y install nodejs npm \
-    && \
-    echo
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN dnf -y group install "Development Tools" && \
+    dnf -y install \
+            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm \
+            https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm && \
+    dnf -y install \
+        boost-devel \
+        boost-static \
+        cmake \
+        ffmpeg-devel \
+        gcc-c++ \
+        libevdev-devel \
+        libX11-devel \
+        libxcb-devel \
+        libXcursor-devel \
+        libXfixes-devel \
+        libXinerama-devel \
+        libXi-devel \
+        libXrandr-devel \
+        libXtst-devel \
+        mesa-libGL-devel \
+        openssl-devel \
+        opus-devel \
+        pulseaudio-libs-devel \
+        libcap-devel \
+        libdrm-devel \
+        rpm-build \
+        curl-minimal \
+    && dnf clean all \
+    && rm -rf /var/cache/yum
 
 # Clone and build Sunshine
 ARG SUNSHINE_VERSION=v2025.122.141614
-RUN \
-    echo "**** Clone Sunshine repository ****" \
-        && cd /tmp \
-        && git clone --depth 1 --branch ${SUNSHINE_VERSION} https://github.com/LizardByte/Sunshine.git \
-        && cd Sunshine \
-        && git submodule update --init --recursive \
-    && \
-    echo "**** Build Sunshine ****" \
-        && cd /tmp/Sunshine \
-        && mkdir build \
-        && cd build \
-        && cmake -DCMAKE_BUILD_TYPE=Release \
-                 -DSUNSHINE_ENABLE_WAYLAND=OFF \
-                 -DSUNSHINE_ENABLE_X11=ON \
-                 -DSUNSHINE_ENABLE_DRM=ON \
-                 -DSUNSHINE_ENABLE_CUDA=OFF \
-                 -DBUILD_DOCS=OFF \
-                 -DCMAKE_EXE_LINKER_FLAGS="-lmvec" \
-                 .. \
-        && make -j$(nproc) \
-        && make install DESTDIR=/tmp/sunshine-install \
-    && \
-    echo
+ENV SUNSHINE_TAG=$SUNSHINE_VERSION
+RUN curl -L \
+         -o /root/build.sh \
+         https://github.com/thatsysadmin/Sunshine/raw/refs/heads/nightly/scripts/build-private.sh && \
+    chmod +x /root/build.sh
+
+RUN ["/root/build.sh", "-rpm"]
 
 # Main image
 FROM base
 LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
-
-# Update package repos
-RUN \
-    echo "**** Update package manager ****" \
-        && dnf -y update \
-    && \
-    echo "**** Enable EPEL and CRB repositories ****" \
-        && dnf -y install epel-release \
-        && dnf config-manager --set-enabled crb \
-    && \
-    echo
 
 # Update locale
 RUN \
@@ -115,17 +69,6 @@ ENV \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
-
-# Re-install certificates
-RUN \
-    echo "**** Install certificates ****" \
-        && dnf -y reinstall ca-certificates \
-    && \
-    echo "**** Section cleanup ****" \
-        && dnf clean all \
-        && rm -rf /var/cache/dnf \
-    && \
-    echo
 
 # Install core packages
 RUN \
@@ -417,8 +360,8 @@ RUN \
 RUN \
     echo "**** Install Steam ****" \
         && dnf -y install \
-            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
-            https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm \
+            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm \
+            https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm \
         && dnf -y install steam \
     && \
     echo "**** Section cleanup ****" \
