@@ -33,7 +33,7 @@ RUN \
             mesa-libGL-devel \
             openssl-devel \
             pulseaudio-libs-devel \
-            curl-devel \
+            libcurl-devel \
             libdrm-devel \
             libcap-devel \
             wayland-devel \
@@ -119,7 +119,7 @@ RUN \
         && dnf -y install \
             bash \
             bash-completion \
-            curl \
+            curl-minimal \
             git \
             jq \
             less \
@@ -436,7 +436,7 @@ RUN \
             mesa-libGL \
             openssl \
             pulseaudio-libs \
-            curl \
+            libcurl \
             libevdev \
             libdrm \
             libcap \
