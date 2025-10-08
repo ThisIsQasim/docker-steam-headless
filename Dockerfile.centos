@@ -1,0 +1,520 @@
+# Multi-stage build for Sunshine on CentOS Stream 9
+FROM quay.io/centos/centos:stream9 AS sunshine-builder
+
+# Install build dependencies for Sunshine
+RUN \
+    echo "**** Update package manager ****" \
+        && dnf -y update \
+    && \
+    echo "**** Enable EPEL and CRB repositories ****" \
+        && dnf -y install epel-release \
+        && dnf config-manager --set-enabled crb \
+    && \
+    echo "**** Install build dependencies ****" \
+        && dnf -y install \
+            git \
+            cmake \
+            gcc \
+            gcc-c++ \
+            make \
+            rpm-build \
+            boost-devel \
+            opus-devel \
+            libva-devel \
+            libvdpau-devel \
+            libX11-devel \
+            libxcb-devel \
+            libXfixes-devel \
+            libXrandr-devel \
+            libXtst-devel \
+            mesa-libGL-devel \
+            openssl-devel \
+            pulseaudio-libs-devel \
+            curl-devel \
+            evdev-devel \
+            libdrm-devel \
+            libcap-devel \
+            wayland-devel \
+            miniupnpc-devel \
+            avahi-devel \
+            libappindicator-gtk3-devel \
+            libnotify-devel \
+            numactl-devel \
+            libevdev-devel \
+            systemd-devel \
+    && \
+    echo "**** Install Node.js for web UI ****" \
+        && dnf -y install nodejs npm \
+    && \
+    echo
+
+# Clone and build Sunshine
+ARG SUNSHINE_VERSION=v2025.122.141614
+RUN \
+    echo "**** Clone Sunshine repository ****" \
+        && cd /tmp \
+        && git clone --depth 1 --branch ${SUNSHINE_VERSION} https://github.com/LizardByte/Sunshine.git \
+    && \
+    echo "**** Build Sunshine ****" \
+        && cd /tmp/Sunshine \
+        && mkdir build \
+        && cd build \
+        && cmake -DCMAKE_BUILD_TYPE=Release \
+                 -DSUNSHINE_ENABLE_WAYLAND=ON \
+                 -DSUNSHINE_ENABLE_X11=ON \
+                 -DSUNSHINE_ENABLE_DRM=ON \
+                 -DSUNSHINE_ENABLE_CUDA=OFF \
+                 .. \
+        && make -j$(nproc) \
+        && make install DESTDIR=/tmp/sunshine-install \
+    && \
+    echo
+
+# Main image
+FROM quay.io/centos/centos:stream9
+LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
+
+# Update package repos
+RUN \
+    echo "**** Update package manager ****" \
+        && dnf -y update \
+    && \
+    echo "**** Enable EPEL and CRB repositories ****" \
+        && dnf -y install epel-release \
+        && dnf config-manager --set-enabled crb \
+    && \
+    echo
+
+# Update locale
+RUN \
+    echo "**** Install and configure locales ****" \
+        && dnf -y install glibc-langpack-en \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+ENV \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+# Re-install certificates
+RUN \
+    echo "**** Install certificates ****" \
+        && dnf -y reinstall ca-certificates \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install core packages
+RUN \
+    echo "**** Install tools ****" \
+        && dnf -y install \
+            bash \
+            bash-completion \
+            curl \
+            git \
+            jq \
+            less \
+            man-db \
+            mlocate \
+            nano \
+            net-tools \
+            p7zip \
+            p7zip-plugins \
+            patch \
+            pciutils \
+            pkg-config \
+            procps-ng \
+            psmisc \
+            rsync \
+            screen \
+            sudo \
+            unzip \
+            vim \
+            wget \
+            xmlstarlet \
+            xz \
+    && \
+    echo "**** Install python ****" \
+        && dnf -y install \
+            python3 \
+            python3-numpy \
+            python3-pip \
+            python3-setuptools \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Configure default user and set user env
+ENV \
+    PUID=99 \
+    PGID=100 \
+    UMASK=000 \
+    USER="default" \
+    USER_PASSWORD="password" \
+    USER_HOME="/home/default" \
+    TZ="Pacific/Auckland" \
+    USER_LOCALES="en_US.UTF-8 UTF-8"
+RUN \
+    echo "**** Configure default user '${USER}' ****" \
+        && mkdir -p \
+            ${USER_HOME} \
+        && useradd -d ${USER_HOME} -s /bin/bash ${USER} \
+        && chown -R ${USER} \
+            ${USER_HOME} \
+        && echo "${USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+    && \
+    echo
+
+# Install supervisor
+RUN \
+    echo "**** Install supervisor ****" \
+        && dnf -y install supervisor \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install X Server requirements
+ENV \
+    XORG_SOCKET_DIR="/tmp/.X11-unix" \
+    XDG_RUNTIME_DIR="/tmp/.X11-unix/run" \
+    XDG_SESSION_TYPE="x11" \
+    FORCE_X11_DUMMY_CONFIG="false"
+RUN \
+    echo "**** Install X Server requirements ****" \
+        && dnf -y install \
+            avahi-tools \
+            dbus-x11 \
+            libXcomposite-devel \
+            libXcursor \
+            wmctrl \
+            fuse-libs \
+            xorg-x11-apps \
+            xorg-x11-utils \
+            xorg-x11-server-utils \
+            x11vnc \
+            xauth \
+            xbindkeys \
+            xclip \
+            xdotool \
+            xorg-x11-fonts-misc \
+            xorg-x11-fonts-Type1 \
+            xinit \
+            xorg-x11-server-Xorg \
+            xorg-x11-drv-evdev \
+            xorg-x11-drv-libinput \
+            xorg-x11-drv-dummy \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install audio requirements
+ENV \
+    PULSE_SOCKET_DIR="/tmp/pulse" \
+    PULSE_SERVER="unix:/tmp/pulse/pulse-socket"
+RUN \
+    echo "**** Install pulseaudio requirements ****" \
+        && dnf -y install \
+            pulseaudio \
+            alsa-utils \
+            alsa-lib \
+            alsa-plugins-pulseaudio \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install desktop environment
+RUN \
+    echo "**** Install desktop requirements ****" \
+        && dnf -y install \
+            dbus-libs \
+            mesa-libEGL \
+            gtk3 \
+            gtk2 \
+            SDL2 \
+    && \
+    echo "**** Install desktop environment ****" \
+        && dnf -y install \
+            google-noto-sans-fonts \
+            gedit \
+            ImageMagick \
+            xdg-utils \
+            @xfce-desktop-environment \
+            xfce4-terminal \
+    && \
+    echo "**** Install WoL Manager requirements ****" \
+        && dnf -y install \
+            tcpdump \
+            xprintidle \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Add support for flatpaks
+ENV \
+    XDG_DATA_DIRS="/home/default/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/"
+RUN \
+    echo "**** Install flatpak support ****" \
+        && dnf -y install \
+            flatpak \
+    && \
+    echo "**** Configure flatpak ****" \
+        && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install Web Frontend
+ARG NODE_VERSION="v20"
+ARG FRONTEND_VERSION=a8eb92f
+RUN \
+    echo "**** Install Node ${NODE_VERSION} ****" \
+        && mkdir -p /tmp/nodejs \
+        && rm -rf /opt/nodejs \
+        && wget -qO /tmp/nodejs/nodejs.tar.xz \
+            "https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/node-$(wget -qO- https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/ | sed -nE 's|.*>node-(.*)-linux-x64\.tar.xz</a>.*|\1|p')-linux-x64.tar.xz" \
+        && tar -xJf /tmp/nodejs/nodejs.tar.xz -C /tmp/nodejs --strip-components=1 \
+        && mv /tmp/nodejs /opt/nodejs \
+        && ln -sf /opt/nodejs/bin/node /usr/local/bin/node \
+        && ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm \
+        && ln -sf /opt/nodejs/bin/npx /usr/local/bin/npx \
+    && \
+    echo "**** Fetch Web Frontend ****" \
+        && mkdir -p /opt \
+        && cd /opt \
+        && rm -rf /opt/frontend \
+        && git clone https://github.com/Steam-Headless/frontend.git --branch master /opt/frontend \
+        && cd /opt/frontend \
+        && git checkout ${FRONTEND_VERSION} 2> /dev/null \
+        && git submodule init \
+        && git submodule update --depth 1 --recursive \
+        && rm -rf /opt/frontend/.git \
+    && \
+    echo "**** Configure Web Frontend ****" \
+        && echo '<!DOCTYPE html>' > /opt/frontend/index.html \
+        && echo '<html><head><meta http-equiv="refresh" content="0;url=./web/"></head><body><p>If you are not redirected, <a href="./web/">click here</a>.</p></body></html>' >> /opt/frontend/index.html \
+        && chmod -R 755 /opt/frontend \
+        && convert /opt/frontend/web/images/icons/novnc-ios-180.png -resize "128x128" /tmp/steam-headless.png \
+        && xdg-icon-resource install --novendor --size 128 /tmp/steam-headless.png \
+    && \
+    echo "**** Section cleanup ****" \
+        && rm -f /tmp/steam-headless.png
+
+# Install Websockify
+ARG WEBSOCKETIFY_VERSION=0.11.0
+RUN \
+    echo "**** Install Websockify dependencies ****" \
+        && dnf -y install \
+            python3-numpy \
+            python3-requests \
+            python3-jwcrypto \
+            python3-redis \
+    && \
+    echo "**** Fetch Websockify ****" \
+        && cd /tmp \
+        && wget -O /tmp/websockify.tar.gz https://github.com/novnc/websockify/archive/v${WEBSOCKETIFY_VERSION}.tar.gz \
+    && \
+    echo "**** Extract Websockify ****" \
+        && cd /tmp \
+        && tar -xvf /tmp/websockify.tar.gz \
+    && \
+    echo "**** Install Websockify to Web Frontend path ****" \
+        && cd /tmp \
+        && mv -v /tmp/websockify-${WEBSOCKETIFY_VERSION} /opt/frontend/utils/websockify \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+        && rm -rf \
+            /tmp/websockify-* \
+            /tmp/websockify.tar.gz
+
+# Setup audio streaming deps
+RUN \
+    echo "**** Install audio streaming deps ****" \
+        && dnf -y install \
+            bzip2 \
+            gstreamer1 \
+            gstreamer1-plugins-base \
+            gstreamer1-plugins-good \
+            gstreamer1-plugins-bad-free \
+            gstreamer1-plugins-ugly-free \
+            gstreamer1-libav \
+            gstreamer1-vaapi \
+            libsndfile \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Setup video streaming deps
+RUN \
+    echo "**** Install Intel media drivers and VAAPI ****" \
+        && dnf -y install \
+            libva \
+            libva-utils \
+            mesa-va-drivers \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install tools for monitoring hardware
+RUN \
+    echo "**** Install useful HW monitoring tools ****" \
+        && dnf -y install \
+            htop \
+            libva-utils \
+            libvdpau \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Install Steam
+RUN \
+    echo "**** Install Steam ****" \
+        && dnf -y install \
+            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
+            https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-9.noarch.rpm \
+        && dnf -y install steam \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# Copy Sunshine from builder stage
+COPY --from=sunshine-builder /tmp/sunshine-install /
+
+# Install Sunshine runtime dependencies
+RUN \
+    echo "**** Install Sunshine runtime dependencies ****" \
+        && dnf -y install \
+            boost \
+            opus \
+            libva \
+            libvdpau \
+            libX11 \
+            libxcb \
+            libXfixes \
+            libXrandr \
+            libXtst \
+            mesa-libGL \
+            openssl \
+            pulseaudio-libs \
+            curl \
+            libevdev \
+            libdrm \
+            libcap \
+            wayland \
+            miniupnpc \
+            avahi-libs \
+            libappindicator-gtk3 \
+            libnotify \
+            numactl-libs \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf \
+    && \
+    echo
+
+# TODO: Deprecate neko
+# Install Neko server
+COPY --from=m1k1o/neko:base /usr/bin/neko /usr/bin/neko
+COPY --from=m1k1o/neko:base /var/www /var/www
+
+# Various other tools
+ARG DUMB_INIT_VERSION=1.2.5
+ARG DUMB_UDEV_VERSION=64d1427
+RUN \
+    echo "**** Install dumb-init ****" \
+        && wget --no-check-certificate --no-cookies --quiet \
+            -O /usr/bin/dumb-init \
+            https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_x86_64 \
+        && chmod +x /usr/bin/dumb-init \
+    && \
+    echo "**** Install dumb-udev ****" \
+        && python3 -m pip install \
+            --break-system-packages \
+            --pre \
+            --upgrade \
+            --no-cache-dir \
+            git+https://github.com/Steam-Headless/dumb-udev.git@${DUMB_UDEV_VERSION} \
+    && \
+    echo
+
+# Add FS overlay
+COPY overlay /
+
+# Set display environment variables
+ENV \
+    DISPLAY_CDEPTH="24" \
+    DISPLAY_REFRESH="120" \
+    DISPLAY_SIZEH="900" \
+    DISPLAY_SIZEW="1600" \
+    DISPLAY_VIDEO_PORT="DFP" \
+    DISPLAY=":55"
+ENV \
+    NVIDIA_DRIVER_CAPABILITIES="all" \
+    NVIDIA_VISIBLE_DEVICES="all"
+
+# Set container configuration environment variables
+ENV \
+    MODE="primary" \
+    WEB_UI_MODE="vnc" \
+    ENABLE_VNC_AUDIO="true" \
+    NEKO_PASSWORD=neko \
+    NEKO_PASSWORD_ADMIN=admin \
+    ENABLE_STEAM="true" \
+    STEAM_ARGS="-silent" \
+    WEBUI_USER="" \
+    WEBUI_PASS="" \
+    ENABLE_SUNSHINE="true" \
+    ENABLE_EVDEV_INPUTS="true" \
+    ENABLE_WOL_POWER_MANAGER="false" \
+    ENABLE_SID="false"
+
+# Configure required ports
+ENV \
+    PORT_NOVNC_WEB="8083" \
+    NEKO_NAT1TO1=""
+
+# Expose the required ports
+EXPOSE 8083
+
+# Set entrypoint
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
