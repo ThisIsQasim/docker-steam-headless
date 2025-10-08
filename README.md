@@ -17,7 +17,10 @@ Easily deploy a Steam Docker instance in seconds.
 - Full controller support
 - Support for Flatpak and Appimage installation
 - Root access
-- Based on Debian Bookworm
+- Multiple base image variants:
+  - Debian Bookworm (default)
+  - Arch Linux
+  - CentOS Stream 9
 
 ---
 ## Notes:

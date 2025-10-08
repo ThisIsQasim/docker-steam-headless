@@ -44,6 +44,9 @@ Populate this file with the contents of the default Docker Compose File
 - [AMD and Intel GPUs](./compose-files/docker-compose.amd+intel.yml).
 - [Privileged AMD and Intel GPUs Docker Compose Template](./compose-files/docker-compose.amd+intel.privileged.yml) (grants full access to host devices).
 
+### CentOS Stream 9:
+- [CentOS Stream 9 Docker Compose Template](./compose-files/docker-compose.centos.yml) (uses CentOS Stream 9 base with Sunshine compiled from source).
+
 #### Multipl AMD or Intel GPUs
 
 If you have multiple AMD or Intel GPUs and you wish to isolate them, then follow these steps to determine the card to passthrough in the docker compose file. This requires that you do not use the privileged compose template.
