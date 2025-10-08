@@ -153,6 +153,12 @@ The CentOS variant will be available as:
 
 ## Notes
 
+### Neko Server Removed
+The CentOS variant does not include the Neko server (WebRTC streaming). Only VNC-based web UI is available:
+- `WEB_UI_MODE` is set to `"vnc"` by default
+- NEKO environment variables are not included
+- This simplifies the build and reduces dependencies
+
 ### Missing Packages
 Some packages from Debian are not available or needed in CentOS:
 - `xcvt` - Not required, using standard xrandr utilities
