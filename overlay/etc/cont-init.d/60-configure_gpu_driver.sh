@@ -199,6 +199,20 @@ function install_deb_mesa {
     fi
 }
 
+function install_rpm_mesa {
+    if [ ! -f /tmp/init-mesa-libs-install.log ]; then
+        print_step_header "Install mesa vulkan drivers"
+        dnf install -y \
+            vulkan-loader \
+            mesa-vulkan-drivers \
+            mesa-dri-drivers \
+            vulkan-tools \
+            &>>/tmp/init-mesa-libs-install.log
+    else
+        print_step_header "Mesa has already been installed into this container"
+    fi
+}
+
 function install_amd_gpu_driver {
     if command -v pacman &>/dev/null; then
         print_step_header "Install AMD Mesa driver"
@@ -209,6 +223,8 @@ function install_amd_gpu_driver {
             vulkan-radeon
     elif command -v apt-get &>/dev/null; then
         install_deb_mesa
+    elif command -v dnf &>/dev/null; then
+        install_rpm_mesa
     fi
 }
 
@@ -222,6 +238,8 @@ function install_intel_gpu_driver {
             vulkan-intel
     elif command -v apt-get &>/dev/null; then
         install_deb_mesa
+    elif command -v dnf &>/dev/null; then
+        install_rpm_mesa
     fi
 }
 

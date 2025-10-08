@@ -159,6 +159,12 @@ The CentOS variant does not include the Neko server (WebRTC streaming). Only VNC
 - NEKO environment variables are not included
 - This simplifies the build and reduces dependencies
 
+### Script Compatibility
+The entrypoint and initialization scripts have been updated to support CentOS/RHEL distributions:
+- **GPU Driver Configuration** (`60-configure_gpu_driver.sh`): Added DNF package manager support for Mesa/Vulkan driver installation
+- **Package Manager Detection**: Scripts automatically detect whether to use `apt-get`, `pacman`, or `dnf`
+- All other scripts are distribution-agnostic and work without modification
+
 ### Missing Packages
 Some packages from Debian are not available or needed in CentOS:
 - `xcvt` - Not required, using standard xrandr utilities
