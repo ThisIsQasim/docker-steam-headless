@@ -1,5 +1,8 @@
 # Multi-stage build for Sunshine on CentOS Stream 9
-FROM quay.io/centos/centos:stream9 AS sunshine-builder
+FROM quay.io/centos/centos:stream9 AS base
+
+# Builder stage
+FROM base AS sunshine-builder
 
 # Install build dependencies for Sunshine
 RUN \
@@ -71,7 +74,7 @@ RUN \
     echo
 
 # Main image
-FROM quay.io/centos/centos:stream9
+FROM base
 LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
 
 # Update package repos
