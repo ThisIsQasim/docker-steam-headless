@@ -45,6 +45,7 @@ RUN dnf -y group install "Development Tools" && \
 # Clone and build Sunshine
 ARG SUNSHINE_VERSION=v2025.122.141614
 ENV SUNSHINE_TAG=$SUNSHINE_VERSION
+ENV SUNSHINE_ENABLE_CUDA=OFF
 RUN curl -L \
          -o /root/build.sh \
          https://github.com/thatsysadmin/Sunshine/raw/refs/heads/nightly/scripts/build-private.sh && \
