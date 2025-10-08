@@ -34,7 +34,6 @@ RUN \
             openssl-devel \
             pulseaudio-libs-devel \
             curl-devel \
-            evdev-devel \
             libdrm-devel \
             libcap-devel \
             wayland-devel \
