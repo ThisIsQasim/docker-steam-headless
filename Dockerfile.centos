@@ -36,7 +36,7 @@ RUN dnf -y group install "Development Tools" && \
         pulseaudio-libs-devel \
         libcap-devel \
         libdrm-devel \
-        miniupnpc \
+        miniupnpc-devel \
         rpm-build \
         curl-devel \
     && dnf clean all \
