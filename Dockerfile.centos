@@ -37,6 +37,7 @@ RUN dnf -y group install "Development Tools" && \
         libcap-devel \
         libdrm-devel \
         miniupnpc-devel \
+        libva-devel \
         rpm-build \
         curl-devel \
     && dnf clean all \
