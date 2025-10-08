@@ -13,6 +13,10 @@ RUN \
         && dnf -y install epel-release \
         && dnf config-manager --set-enabled crb \
     && \
+    echo "**** Enable RPM Fusion for FFmpeg ****" \
+        && dnf -y install \
+            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
+    && \
     echo "**** Install build dependencies ****" \
         && dnf -y install \
             git \
@@ -44,7 +48,7 @@ RUN \
             numactl-devel \
             libevdev-devel \
             systemd-devel \
-            ffmpeg-devel \
+            ffmpeg-free-devel \
     && \
     echo "**** Install Node.js for web UI ****" \
         && dnf -y install nodejs npm \
