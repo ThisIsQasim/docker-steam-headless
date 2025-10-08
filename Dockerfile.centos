@@ -25,6 +25,8 @@ RUN \
             gcc-c++ \
             make \
             rpm-build \
+            doxygen \
+            graphviz \
             boost-devel \
             opus-devel \
             libva-devel \
@@ -41,6 +43,7 @@ RUN \
             libdrm-devel \
             libcap-devel \
             wayland-devel \
+            wayland-protocols-devel \
             miniupnpc-devel \
             avahi-devel \
             libappindicator-gtk3-devel \
@@ -62,16 +65,19 @@ RUN \
     echo "**** Clone Sunshine repository ****" \
         && cd /tmp \
         && git clone --depth 1 --branch ${SUNSHINE_VERSION} https://github.com/LizardByte/Sunshine.git \
+        && cd Sunshine \
+        && git submodule update --init --recursive \
     && \
     echo "**** Build Sunshine ****" \
         && cd /tmp/Sunshine \
         && mkdir build \
         && cd build \
         && cmake -DCMAKE_BUILD_TYPE=Release \
-                 -DSUNSHINE_ENABLE_WAYLAND=ON \
+                 -DSUNSHINE_ENABLE_WAYLAND=OFF \
                  -DSUNSHINE_ENABLE_X11=ON \
                  -DSUNSHINE_ENABLE_DRM=ON \
                  -DSUNSHINE_ENABLE_CUDA=OFF \
+                 -DFFMPEG_PREPARED_BINARIES="/usr" \
                  .. \
         && make -j$(nproc) \
         && make install DESTDIR=/tmp/sunshine-install \
@@ -209,12 +215,10 @@ RUN \
             libXcursor \
             wmctrl \
             fuse-libs \
-            xorg-x11-apps \
             xorg-x11-utils \
             xorg-x11-server-utils \
             x11vnc \
             xauth \
-            xbindkeys \
             xclip \
             xdotool \
             xorg-x11-fonts-misc \
