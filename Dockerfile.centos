@@ -48,6 +48,7 @@ RUN \
             numactl-devel \
             libevdev-devel \
             systemd-devel \
+            ffmpeg-free \
             ffmpeg-free-devel \
     && \
     echo "**** Install Node.js for web UI ****" \
