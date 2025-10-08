@@ -38,6 +38,8 @@ RUN dnf -y group install "Development Tools" && \
         libdrm-devel \
         miniupnpc-devel \
         libva-devel \
+        libayatana-appindicator-gtk3-devel \
+        libnotify-devel \
         rpm-build \
         curl-devel \
     && dnf clean all \
