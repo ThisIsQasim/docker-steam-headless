@@ -186,6 +186,7 @@ RUN \
             xfconf \
             xfdesktop \
             xfwm4 \
+            xterm \
         # Delete these as they are not needed at all
         && rm -f \
             /usr/share/applications/xfce4-about.desktop \
