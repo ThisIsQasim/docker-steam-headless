@@ -8,6 +8,15 @@ Follow these instructions to configure a docker-compose.yml for your system.
 > 
 > Depending on how you have installed this, the commands to execute docker compose may vary.
 
+> __Available Image Tags__
+>
+> This project provides multiple base images to choose from:
+> - `josh5/steam-headless:latest` or `josh5/steam-headless:debian` - Based on Debian Bookworm (default)
+> - `josh5/steam-headless:arch` - Based on Arch Linux
+> - `josh5/steam-headless:fedora` - Based on Fedora 42
+>
+> Simply change the image tag in your docker-compose.yml file to use a different base.
+
 
 ## PREPARE DIRECTORIES:
 

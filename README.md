@@ -17,7 +17,7 @@ Easily deploy a Steam Docker instance in seconds.
 - Full controller support
 - Support for Flatpak and Appimage installation
 - Root access
-- Based on Debian Trixie
+- Multiple base images available: Debian Trixie, Arch Linux, and Fedora 45
 
 ---
 ## Notes:
