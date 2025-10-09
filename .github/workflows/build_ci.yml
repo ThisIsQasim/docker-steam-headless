@@ -53,19 +53,19 @@ jobs:
           DOCKER_TAGS=""
           if [[ ${GITHUB_REF} == refs/heads/master ]]; then
             if [[ ${FLAVOUR} == 'debian' ]]; then
-              DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:latest,${GHCR_IMAGE}:latest,${GHCR_IMAGE}:stable,"
+              DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:latest,${GHCR_IMAGE}:stable,"
             fi
-            DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:${FLAVOUR},${GHCR_IMAGE}:${FLAVOUR},"
+            DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:${FLAVOUR},"
           elif [[ ${GITHUB_REF} == refs/heads/staging ]]; then
-            DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:${FLAVOUR}-staging,${GHCR_IMAGE}:${FLAVOUR}-staging,"
+            DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:${FLAVOUR}-staging,"
           elif [[ ${GITHUB_REF} == refs/heads/dev-* ]]; then
-            DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:${FLAVOUR}-${VERSION_TAG},${GHCR_IMAGE}:${FLAVOUR}-${VERSION_TAG},"
+            DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:${FLAVOUR}-${VERSION_TAG},"
           elif [[ ${GITHUB_REF} == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
             if [[ ${VERSION} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}[-\w]*$ ]]; then
-              DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:${FLAVOUR}-${VERSION},${GHCR_IMAGE}:${FLAVOUR}-${VERSION},"
+              DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:${FLAVOUR}-${VERSION},"
               if [[ ${FLAVOUR} == 'debian' ]]; then
-                DOCKER_TAGS="${DOCKER_TAGS}${DOCKER_HUB_IMAGE}:latest,${GHCR_IMAGE}:latest,"
+                DOCKER_TAGS="${DOCKER_TAGS}${GHCR_IMAGE}:latest,"
               fi
               
             fi
@@ -79,9 +79,6 @@ jobs:
           echo "Build: [$(date +"%F %T")] [${GITHUB_REF_NAME}] [${GITHUB_SHA}] [${FLAVOUR}]" > ./overlay/version.txt
 
           DOCKER_PUSH="true"
-          if [[ ${DOCKER_HUB_IMAGE} != 'docker.io/josh5/steam-headless' ]]; then
-            DOCKER_PUSH="false"
-          fi
           if [[ ${VERSION_TAG%/merge} =~ "pr-"* ]]; then
             DOCKER_PUSH="false"
           fi
@@ -129,21 +126,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # ---
-      - name: Log into Docker Hub registry
-        if: success() && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/'))
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 #v3.3.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # ---
       - name: Docker meta
         if: success()
         id: meta
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 #v5.6.1
         with:
           images: |
-            ${{ steps.prepare.outputs.docker_image }}
+            ${{ steps.prepare.outputs.ghcr_image }}
           labels: |
             maintainer=Josh.5
             source.version=${{ steps.prepare.outputs.sha_short }}
