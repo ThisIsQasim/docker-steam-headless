@@ -2,12 +2,6 @@
 # Configure dbus
 print_header "Configure local"
 
-# Ensure /etc/locale.gen exists (similar to how Debian Dockerfile generates it)
-if [ ! -f /etc/locale.gen ]; then
-    print_step_header "Creating /etc/locale.gen file"
-    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-fi
-
 current_local=$(head -n 1 /etc/locale.gen)
 user_local=$(echo ${USER_LOCALES} | cut -d ' ' -f 1)
 
