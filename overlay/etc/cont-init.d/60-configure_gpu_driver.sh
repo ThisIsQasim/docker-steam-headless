@@ -207,6 +207,7 @@ function install_dnf_mesa {
             mesa-vulkan-drivers \
             mesa-dri-drivers \
             vulkan-tools \
+            xorg-x11-drv-amdgpu \
             &>>/tmp/init-mesa-libs-install.log
     else
         print_step_header "Mesa has already been installed into this container"
