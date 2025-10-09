@@ -1,0 +1,434 @@
+FROM fedora:41
+LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
+
+# Update locale
+RUN \
+    echo "**** Install and configure locales ****" \
+        && dnf install -y \
+            glibc-langpack-en \
+        && echo 'LANG=en_US.UTF-8' > /etc/locale.conf \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+ENV \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+# Re-install certificates
+RUN \
+    echo "**** Install certificates ****" \
+        && dnf install -y \
+            ca-certificates \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install core packages
+RUN \
+    echo "**** Install tools ****" \
+        && dnf install -y \
+            bash \
+            bash-completion \
+            curl \
+            git \
+            jq \
+            less \
+            man-db \
+            mlocate \
+            nano \
+            net-tools \
+            p7zip \
+            p7zip-plugins \
+            patch \
+            pciutils \
+            pkg-config \
+            procps-ng \
+            psmisc \
+            rsync \
+            screen \
+            sudo \
+            unzip \
+            vim \
+            wget \
+            xmlstarlet \
+            xz \
+    && \
+    echo "**** Install python ****" \
+        && dnf install -y \
+            python3 \
+            python3-numpy \
+            python3-pip \
+            python3-setuptools \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Configure default user and set user env
+ENV \
+    PUID=99 \
+    PGID=100 \
+    UMASK=000 \
+    USER="default" \
+    USER_PASSWORD="password" \
+    USER_HOME="/home/default" \
+    TZ="Pacific/Auckland" \
+    USER_LOCALES="en_US.UTF-8 UTF-8"
+RUN \
+    echo "**** Configure default user '${USER}' ****" \
+        && mkdir -p \
+            ${USER_HOME} \
+        && useradd -d ${USER_HOME} -s /bin/bash ${USER} \
+        && chown -R ${USER} \
+            ${USER_HOME} \
+        && echo "${USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+    && \
+    echo
+
+# Install supervisor
+RUN \
+    echo "**** Install supervisor ****" \
+        && dnf install -y \
+            supervisor \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install X Server requirements
+ENV \
+    XORG_SOCKET_DIR="/tmp/.X11-unix" \
+    XDG_RUNTIME_DIR="/tmp/.X11-unix/run" \
+    XDG_SESSION_TYPE="x11" \
+    FORCE_X11_DUMMY_CONFIG="false"
+RUN \
+    echo "**** Install X Server requirements ****" \
+        && dnf install -y \
+            avahi-tools \
+            dbus-x11 \
+            fuse \
+            libXcomposite \
+            libXcursor \
+            wmctrl \
+            x11vnc \
+            xauth \
+            xbindkeys \
+            xclip \
+            xdotool \
+            xorg-x11-apps \
+            xorg-x11-drv-dummy \
+            xorg-x11-drv-evdev \
+            xorg-x11-drv-libinput \
+            xorg-x11-fonts-misc \
+            xorg-x11-fonts-Type1 \
+            xorg-x11-server-Xorg \
+            xorg-x11-server-utils \
+            xorg-x11-utils \
+            xorg-x11-xinit \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install audio requirements
+ENV \
+    PULSE_SOCKET_DIR="/tmp/pulse" \
+    PULSE_SERVER="unix:/tmp/pulse/pulse-socket"
+RUN \
+    echo "**** Install pulseaudio requirements ****" \
+        && dnf install -y \
+            pulseaudio \
+            alsa-utils \
+            alsa-lib \
+            alsa-plugins-pulseaudio \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install desktop environment
+RUN \
+    echo "**** Install desktop requirements ****" \
+        && dnf install -y \
+            dbus-libs \
+            mesa-libEGL \
+            gtk3 \
+            gtk2 \
+            SDL2 \
+    && \
+    echo "**** Install desktop environment ****" \
+        && dnf install -y \
+            gedit \
+            google-noto-sans-fonts \
+            google-noto-serif-fonts \
+            ImageMagick \
+            liberation-fonts \
+            xdg-utils \
+            xfce4-panel \
+            xfce4-session \
+            xfce4-settings \
+            xfce4-terminal \
+            xfconf \
+            xfdesktop \
+            xfwm4 \
+        # Delete these as they are not needed at all
+        && rm -f \
+            /usr/share/applications/xfce4-about.desktop \
+            /usr/share/applications/xfce4-session-logout.desktop \
+        # Hide these apps. They can be displayed if a user really wants them.
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-accessibility-settings.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-color-settings.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-mail-reader.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-web-browser.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/vim.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/thunar-settings.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/thunar.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/pavucontrol.desktop 2>/dev/null || true \
+        && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/x11vnc.desktop 2>/dev/null || true \
+        # Force these apps to be "System" Apps rather than other categories
+        && sed -i 's/^Categories=.*$/Categories=System;/' /usr/share/applications/xfce4-appfinder.desktop 2>/dev/null || true \
+        && sed -i 's/^Categories=.*$/Categories=System;/' /usr/share/applications/thunar-bulk-rename.desktop 2>/dev/null || true \
+        && sed -i 's/^Categories=.*$/Categories=System;/' /usr/share/applications/org.gnome.gedit.desktop 2>/dev/null || true \
+    && \
+    echo "**** Install WoL Manager requirements ****" \
+        && dnf install -y \
+            tcpdump \
+            xprintidle \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Add support for flatpaks
+ENV \
+    XDG_DATA_DIRS="/home/default/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/"
+RUN \
+    echo "**** Install flatpak support ****" \
+        && dnf install -y \
+            flatpak \
+            gnome-software \
+    && \
+    echo "**** Configure flatpak ****" \
+        && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install Web Frontend
+ARG NODE_VERSION="v20"
+ARG FRONTEND_VERSION=a8eb92f
+RUN \
+    echo "**** Install Node ${NODE_VERSION} ****" \
+        && mkdir -p /tmp/nodejs \
+        && rm -rf /opt/nodejs \
+        && wget -qO /tmp/nodejs/nodejs.tar.xz \
+            "https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/node-$(wget -qO- https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/ | sed -nE 's|.*>node-(.*)-linux-x64\.tar.xz</a>.*|\1|p')-linux-x64.tar.xz" \
+        && tar -xJf /tmp/nodejs/nodejs.tar.xz -C /tmp/nodejs --strip-components=1 \
+        && mv /tmp/nodejs /opt/nodejs \
+        && ln -sf /opt/nodejs/bin/node /usr/local/bin/node \
+        && ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm \
+        && ln -sf /opt/nodejs/bin/npx /usr/local/bin/npx \
+    && \
+    echo "**** Fetch Web Frontend ****" \
+        && mkdir -p /opt \
+        && cd /opt \
+        && rm -rf /opt/frontend \
+        && git clone https://github.com/Steam-Headless/frontend.git --branch master /opt/frontend \
+        && cd /opt/frontend \
+        && git checkout ${FRONTEND_VERSION} 2> /dev/null \
+        && git submodule init \
+        && git submodule update --depth 1 --recursive \
+        && rm -rf /opt/frontend/.git \
+    && \
+    echo "**** Configure Web Frontend ****" \
+        && echo '<!DOCTYPE html>' > /opt/frontend/index.html \
+        && echo '<html><head><meta http-equiv="refresh" content="0;url=./web/"></head><body><p>If you are not redirected, <a href="./web/">click here</a>.</p></body></html>' >> /opt/frontend/index.html \
+        && chmod -R 755 /opt/frontend \
+        && convert /opt/frontend/web/images/icons/novnc-ios-180.png -resize "128x128" /tmp/steam-headless.png \
+        && xdg-icon-resource install --novendor --size 128 /tmp/steam-headless.png \
+    && \
+    echo "**** Section cleanup ****" \
+        && rm -f /tmp/steam-headless.png
+
+# Install Websockify
+ARG WEBSOCKETIFY_VERSION=0.11.0
+RUN \
+    echo "**** Install Websockify dependencies ****" \
+        && dnf install -y \
+            python3-numpy \
+            python3-requests \
+            python3-jwcrypto \
+            python3-redis \
+    && \
+    echo "**** Fetch Websockify ****" \
+        && cd /tmp \
+        && wget -O /tmp/websockify.tar.gz https://github.com/novnc/websockify/archive/v${WEBSOCKETIFY_VERSION}.tar.gz \
+    && \
+    echo "**** Extract Websockify ****" \
+        && cd /tmp \
+        && tar -xvf /tmp/websockify.tar.gz \
+    && \
+    echo "**** Install Websockify to Web Frontend path ****" \
+        && cd /tmp \
+        && mv -v /tmp/websockify-${WEBSOCKETIFY_VERSION} /opt/frontend/utils/websockify \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+        && rm -rf \
+            /tmp/websockify-* \
+            /tmp/websockify.tar.gz
+
+# Setup audio streaming deps
+RUN \
+    echo "**** Install audio streaming deps ****" \
+        && dnf install -y \
+            bzip2 \
+            gstreamer1 \
+            gstreamer1-plugins-bad-free \
+            gstreamer1-plugins-base \
+            gstreamer1-plugins-good \
+            gstreamer1-plugins-ugly-free \
+            libsndfile \
+            openal-soft \
+            SDL \
+            SDL_image \
+            SDL_ttf \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Setup video streaming deps
+RUN \
+    echo "**** Install Intel media drivers and VAAPI ****" \
+        && dnf install -y \
+            intel-media-driver \
+            libva \
+            libva-intel-driver \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install tools for monitoring hardware
+RUN \
+    echo "**** Install useful HW monitoring tools ****" \
+        && dnf install -y \
+            htop \
+            libva-utils \
+            vdpauinfo \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install Steam
+RUN \
+    echo "**** Install Steam ****" \
+        && dnf install -y \
+            steam \
+            gamescope \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# Install Sunshine
+COPY --from=lizardbyte/sunshine:v2025.122.141614-fedora-41 /sunshine.rpm /usr/src/sunshine.rpm
+RUN \
+    echo "**** Install Sunshine requirements ****" \
+        && dnf install -y \
+            libva \
+    && \
+    echo "**** Install Sunshine ****" \
+        && dnf install -y \
+            /usr/src/sunshine.rpm \
+    && \
+    echo "**** Section cleanup ****" \
+        && dnf clean all \
+    && \
+    echo
+
+# TODO: Deprecate neko
+# Install Neko server
+COPY --from=m1k1o/neko:base /usr/bin/neko /usr/bin/neko
+COPY --from=m1k1o/neko:base /var/www /var/www
+
+# Various other tools
+ARG DUMB_INIT_VERSION=1.2.5
+ARG DUMB_UDEV_VERSION=64d1427
+RUN \
+    echo "**** Install dumb-init ****" \
+        && wget --no-check-certificate --no-cookies --quiet \
+            -O /usr/bin/dumb-init \
+            https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_x86_64 \
+        && chmod +x /usr/bin/dumb-init \
+    && \
+    echo "**** Install dumb-udev ****" \
+        && python3 -m pip install \
+            --break-system-packages \
+            --pre \
+            --upgrade \
+            --no-cache-dir \
+            git+https://github.com/Steam-Headless/dumb-udev.git@${DUMB_UDEV_VERSION} \
+    && \
+    echo
+
+# Add FS overlay
+COPY overlay /
+
+# Set display environment variables
+ENV \
+    DISPLAY_CDEPTH="24" \
+    DISPLAY_REFRESH="120" \
+    DISPLAY_SIZEH="900" \
+    DISPLAY_SIZEW="1600" \
+    DISPLAY_VIDEO_PORT="DFP" \
+    DISPLAY=":55"
+ENV \
+    NVIDIA_DRIVER_CAPABILITIES="all" \
+    NVIDIA_VISIBLE_DEVICES="all"
+
+# Set container configuration environment variables
+ENV \
+    MODE="primary" \
+    WEB_UI_MODE="vnc" \
+    ENABLE_VNC_AUDIO="true" \
+    NEKO_PASSWORD=neko \
+    NEKO_PASSWORD_ADMIN=admin \
+    ENABLE_STEAM="true" \
+    STEAM_ARGS="-silent" \
+    WEBUI_USER="" \
+    WEBUI_PASS="" \
+    ENABLE_SUNSHINE="true" \
+    ENABLE_EVDEV_INPUTS="true" \
+    ENABLE_WOL_POWER_MANAGER="false" \
+    ENABLE_SID="false"
+
+# Configure required ports
+ENV \
+    PORT_NOVNC_WEB="8083" \
+    NEKO_NAT1TO1=""
+
+# Expose the required ports
+EXPOSE 8083
+
+# Set entrypoint
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
