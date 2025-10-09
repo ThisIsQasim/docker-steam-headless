@@ -1,4 +1,4 @@
-FROM fedora:41
+FROM fedora:42
 LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
 
 # Update locale
@@ -359,18 +359,18 @@ RUN \
     echo
 
 # Install Sunshine
-# Note: Sunshine will be installed from upstream repositories if available
-# or can be manually installed by users via RPM fusion repos
 RUN \
     echo "**** Install Sunshine requirements ****" \
         && dnf install -y \
             libva \
     && \
-    echo "**** Attempting to install Sunshine from repositories ****" \
-        && (dnf install -y sunshine 2>/dev/null || echo "Sunshine not available in default repos - users can install manually from RPM Fusion") \
+    echo "**** Install Sunshine from GitHub release ****" \
+        && wget -O /tmp/sunshine.rpm https://github.com/LizardByte/Sunshine/releases/download/v2025.924.154138/Sunshine-2025.924.154138-1.fc42.x86_64.rpm \
+        && dnf install -y /tmp/sunshine.rpm \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
+        && rm -f /tmp/sunshine.rpm \
     && \
     echo
 
