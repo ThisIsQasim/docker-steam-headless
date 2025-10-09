@@ -181,6 +181,7 @@ RUN \
             google-noto-serif-fonts \
             ImageMagick \
             liberation-fonts \
+            thunar-volman \
             xdg-utils \
             xfce4-panel \
             xfce4-session \
