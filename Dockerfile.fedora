@@ -39,7 +39,7 @@ RUN \
             jq \
             less \
             man-db \
-            mlocate \
+            plocate \
             nano \
             net-tools \
             p7zip \
@@ -122,16 +122,22 @@ RUN \
             xbindkeys \
             xclip \
             xdotool \
-            xorg-x11-apps \
+            xdpyinfo \
+            xeyes \
+            xinit \
+            xkill \
             xorg-x11-drv-dummy \
             xorg-x11-drv-evdev \
             xorg-x11-drv-libinput \
             xorg-x11-fonts-misc \
             xorg-x11-fonts-Type1 \
             xorg-x11-server-Xorg \
-            xorg-x11-server-utils \
-            xorg-x11-utils \
-            xorg-x11-xinit \
+            xprop \
+            xrandr \
+            xrdb \
+            xset \
+            xsetroot \
+            xwininfo \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
@@ -202,7 +208,6 @@ RUN \
     echo "**** Install WoL Manager requirements ****" \
         && dnf install -y \
             tcpdump \
-            xprintidle \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
@@ -315,9 +320,8 @@ RUN \
 RUN \
     echo "**** Install Intel media drivers and VAAPI ****" \
         && dnf install -y \
-            intel-media-driver \
+            libva-intel-media-driver \
             libva \
-            libva-intel-driver \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
@@ -339,6 +343,11 @@ RUN \
 
 # Install Steam
 RUN \
+    echo "**** Enable RPM Fusion repositories ****" \
+        && dnf install -y \
+            https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+            https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm \
+    && \
     echo "**** Install Steam ****" \
         && dnf install -y \
             steam \
@@ -350,15 +359,15 @@ RUN \
     echo
 
 # Install Sunshine
-COPY --from=lizardbyte/sunshine:v2025.122.141614-fedora-41 /sunshine.rpm /usr/src/sunshine.rpm
+# Note: Sunshine will be installed from upstream repositories if available
+# or can be manually installed by users via RPM fusion repos
 RUN \
     echo "**** Install Sunshine requirements ****" \
         && dnf install -y \
             libva \
     && \
-    echo "**** Install Sunshine ****" \
-        && dnf install -y \
-            /usr/src/sunshine.rpm \
+    echo "**** Attempting to install Sunshine from repositories ****" \
+        && (dnf install -y sunshine 2>/dev/null || echo "Sunshine not available in default repos - users can install manually from RPM Fusion") \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
