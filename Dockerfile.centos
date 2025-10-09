@@ -40,20 +40,37 @@ RUN dnf -y group install "Development Tools" && \
         libva-devel \
         libayatana-appindicator-gtk3-devel \
         libnotify-devel \
+        numactl-devel \
         rpm-build \
         curl-devel \
         nodejs \
-        doxygen \
     && dnf clean all \
     && rm -rf /var/cache/yum
 
 # Clone and build Sunshine
-ARG SUNSHINE_VERSION=v2025.122.141614
-ENV SUNSHINE_TAG=$SUNSHINE_VERSION
-ENV SUNSHINE_ENABLE_CUDA=OFF
+ARG CMAKE_BUILD_TYPE="Release"
+ARG SUNSHINE_EXECUTABLE_PATH="/usr/bin/sunshine"
+ARG SUNSHINE_ASSETS_DIR="/etc/sunshine"
 
-COPY build-private.sh  /root/build.sh
-RUN ["/root/build.sh", "-rpm"]
+
+ARG SUNSHINE_ROOT="/root/sunshine"
+ARG SUNSHINE_TAG=v2025.122.141614
+ARG SUNSHINE_GIT_URL="https://github.com/lizardbyte/sunshine.git"
+
+
+ARG SUNSHINE_ENABLE_WAYLAND=ON
+ARG SUNSHINE_ENABLE_X11=ON
+ARG SUNSHINE_ENABLE_DRM=ON
+ARG SUNSHINE_ENABLE_CUDA=OFF
+
+RUN git clone --depth 1 --branch "$SUNSHINE_TAG" "$SUNSHINE_GIT_URL" --recurse-submodules "$SUNSHINE_ROOT"
+
+RUN mkdir -p /root/sunshine-build \
+    && cd /root/sunshine-build \
+    && cmake "-DBUILD_DOCS=OFF" "-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE" "-DSUNSHINE_EXECUTABLE_PATH=$SUNSHINE_EXECUTABLE_PATH" "-DSUNSHINE_ASSETS_DIR=$SUNSHINE_ASSETS_DIR" "-DSUNSHINE_ENABLE_WAYLAND=$SUNSHINE_ENABLE_WAYLAND" "-DSUNSHINE_ENABLE_X11=$SUNSHINE_ENABLE_X11" "-DSUNSHINE_ENABLE_DRM=$SUNSHINE_ENABLE_DRM" "-DSUNSHINE_ENABLE_CUDA=$SUNSHINE_ENABLE_CUDA" "$SUNSHINE_ROOT"
+
+RUN make -j $(nproc)
+RUN ./gen-rpm -d
 
 # Main image
 FROM base
