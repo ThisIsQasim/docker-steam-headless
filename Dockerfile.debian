@@ -482,7 +482,8 @@ RUN \
     echo
 
 # Install Sunshine
-COPY --from=lizardbyte/sunshine:v2025.122.141614-debian-bookworm /sunshine.deb /usr/src/sunshine.deb
+ARG SUNSHINE_VERSION=v2025.122.141614-debian-bookworm
+COPY --from=lizardbyte/sunshine:${SUNSHINE_VERSION} /sunshine.deb /usr/src/sunshine.deb
 RUN \
     echo "**** Update apt database ****" \
         && apt-get update \
