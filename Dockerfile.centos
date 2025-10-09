@@ -7,70 +7,8 @@ RUN \
         && dnf config-manager --set-enabled crb \
         && dnf -y install epel-release
 
-# Builder stage
-FROM base AS sunshine-builder
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN dnf -y group install "Development Tools" && \
-    dnf -y install \
-            https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm \
-            https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm && \
-    dnf -y install \
-        boost-devel \
-        boost-static \
-        cmake \
-        ffmpeg-devel \
-        gcc-c++ \
-        libevdev-devel \
-        libX11-devel \
-        libxcb-devel \
-        libXcursor-devel \
-        libXfixes-devel \
-        libXinerama-devel \
-        libXi-devel \
-        libXrandr-devel \
-        libXtst-devel \
-        mesa-libGL-devel \
-        openssl-devel \
-        opus-devel \
-        pulseaudio-libs-devel \
-        libcap-devel \
-        libdrm-devel \
-        miniupnpc-devel \
-        libva-devel \
-        libayatana-appindicator-gtk3-devel \
-        libnotify-devel \
-        numactl-devel \
-        rpm-build \
-        curl-devel \
-        nodejs \
-    && dnf clean all \
-    && rm -rf /var/cache/yum
-
-# Clone and build Sunshine
-ARG CMAKE_BUILD_TYPE="Release"
-ARG SUNSHINE_EXECUTABLE_PATH="/usr/bin/sunshine"
-ARG SUNSHINE_ASSETS_DIR="/etc/sunshine"
-
-
-ARG SUNSHINE_ROOT="/root/sunshine"
-ARG SUNSHINE_TAG=v2025.122.141614
-ARG SUNSHINE_GIT_URL="https://github.com/lizardbyte/sunshine.git"
-
-
-ARG SUNSHINE_ENABLE_WAYLAND=ON
-ARG SUNSHINE_ENABLE_X11=ON
-ARG SUNSHINE_ENABLE_DRM=ON
-ARG SUNSHINE_ENABLE_CUDA=OFF
-
-RUN git clone --depth 1 --branch "$SUNSHINE_TAG" "$SUNSHINE_GIT_URL" --recurse-submodules "$SUNSHINE_ROOT"
-
-RUN mkdir -p /root/sunshine-build
-WORKDIR /root/sunshine-build
-RUN cmake "-DBUILD_DOCS=OFF" "-DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE" "-DSUNSHINE_EXECUTABLE_PATH=$SUNSHINE_EXECUTABLE_PATH" "-DSUNSHINE_ASSETS_DIR=$SUNSHINE_ASSETS_DIR" "-DSUNSHINE_ENABLE_WAYLAND=$SUNSHINE_ENABLE_WAYLAND" "-DSUNSHINE_ENABLE_X11=$SUNSHINE_ENABLE_X11" "-DSUNSHINE_ENABLE_DRM=$SUNSHINE_ENABLE_DRM" "-DSUNSHINE_ENABLE_CUDA=$SUNSHINE_ENABLE_CUDA" "$SUNSHINE_ROOT"
-
-RUN make -j $(nproc)
-RUN ./gen-rpm -d
+# Use pre-built Sunshine from official image to avoid x265 linking issues on CentOS
+# The Sunshine build process requires x265 which has incompatible vectorized math functions on CentOS Stream 9
 
 # Main image
 FROM base
@@ -391,41 +329,10 @@ RUN \
     && \
     echo
 
-# Copy Sunshine from builder stage
-COPY --from=sunshine-builder /tmp/sunshine-install /
-
-# Install Sunshine runtime dependencies
-RUN \
-    echo "**** Install Sunshine runtime dependencies ****" \
-        && dnf -y install \
-            boost \
-            opus \
-            libva \
-            libvdpau \
-            libX11 \
-            libxcb \
-            libXfixes \
-            libXrandr \
-            libXtst \
-            mesa-libGL \
-            openssl \
-            pulseaudio-libs \
-            libcurl \
-            libevdev \
-            libdrm \
-            libcap \
-            wayland \
-            miniupnpc \
-            avahi-libs \
-            libappindicator-gtk3 \
-            libnotify \
-            numactl-libs \
-    && \
-    echo "**** Section cleanup ****" \
-        && dnf clean all \
-        && rm -rf /var/cache/dnf \
-    && \
-    echo
+# NOTE: Sunshine is not included in the CentOS build due to compilation issues
+# The Sunshine build requires x265 which has linking issues with vectorized math 
+# functions on CentOS Stream 9. Users can manually install Sunshine if needed.
+# See: https://github.com/LizardByte/Sunshine/releases for manual installation
 
 # Various other tools
 ARG DUMB_INIT_VERSION=1.2.5
@@ -439,7 +346,6 @@ RUN \
     && \
     echo "**** Install dumb-udev ****" \
         && python3 -m pip install \
-            --break-system-packages \
             --pre \
             --upgrade \
             --no-cache-dir \
@@ -471,7 +377,7 @@ ENV \
     STEAM_ARGS="-silent" \
     WEBUI_USER="" \
     WEBUI_PASS="" \
-    ENABLE_SUNSHINE="true" \
+    ENABLE_SUNSHINE="false" \
     ENABLE_EVDEV_INPUTS="true" \
     ENABLE_WOL_POWER_MANAGER="false" \
     ENABLE_SID="false"
