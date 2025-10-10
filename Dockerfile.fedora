@@ -356,6 +356,8 @@ RUN \
             steam \
             gamescope \
     && ln -sf /usr/sbin/steam /usr/games/steam \
+    && ln -sf /usr/lib/libbz2.so.1 /usr/lib/libbz2.so.1.0 \
+
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
