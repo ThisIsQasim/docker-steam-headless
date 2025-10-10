@@ -186,6 +186,8 @@ RUN \
             xfce4-session \
             xfce4-settings \
             xfce4-terminal \
+            xfce4-pulseaudio-plugin \
+            xfce4-notifyd \
             xfconf \
             xfdesktop \
             xfwm4 \
