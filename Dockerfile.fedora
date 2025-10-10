@@ -355,7 +355,7 @@ RUN \
         && dnf install -y \
             steam \
             gamescope \
-    && ln -sf /usr/games/steam /usr/sbin/steam \
+    && ln -sf /usr/sbin/steam /usr/games/steam \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
