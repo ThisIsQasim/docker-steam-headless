@@ -197,6 +197,7 @@ RUN \
         && rm -f \
             /usr/share/applications/xfce4-about.desktop \
             /usr/share/applications/xfce4-session-logout.desktop \
+            /etc/xdg/autostart/xfce-polkit.desktop \
         # Hide these apps. They can be displayed if a user really wants them.
         && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-accessibility-settings.desktop 2>/dev/null || true \
         && sed -i '/[Desktop Entry]/a\NoDisplay=true' /usr/share/applications/xfce4-color-settings.desktop 2>/dev/null || true \
