@@ -357,6 +357,7 @@ RUN \
             gamescope \
     && ln -sf /usr/sbin/steam /usr/games/steam \
     && \
+    && dnf downgrade -y xz xz-libs \ # xz sandbox fails in the newer version
     echo "**** Section cleanup ****" \
         && dnf clean all \
     && \
