@@ -188,6 +188,7 @@ RUN \
             xfce4-terminal \
             xfce4-pulseaudio-plugin \
             xfce4-notifyd \
+            xfce4-statusnotifier-plugin \
             xfconf \
             xfdesktop \
             xfwm4 \
