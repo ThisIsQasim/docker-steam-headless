@@ -510,6 +510,9 @@ RUN \
 COPY --from=m1k1o/neko:base /usr/bin/neko /usr/bin/neko
 COPY --from=m1k1o/neko:base /var/www /var/www
 
+# Copy fake-udev from games-on-whales/wolf image
+COPY --from=ghcr.io/games-on-whales/wolf:stable /wolf/fake-udev /usr/bin/fake-udev
+
 # Various other tools
 ARG DUMB_INIT_VERSION=1.2.5
 ARG DUMB_UDEV_VERSION=64d1427
@@ -560,7 +563,8 @@ ENV \
     ENABLE_SUNSHINE="true" \
     ENABLE_EVDEV_INPUTS="true" \
     ENABLE_WOL_POWER_MANAGER="false" \
-    ENABLE_SID="false"
+    ENABLE_SID="false" \
+    USE_FAKE_UDEV="false"
 
 # Configure required ports
 ENV \
