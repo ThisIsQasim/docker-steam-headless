@@ -36,10 +36,18 @@ else
 fi
 
 if [ "${run_dumb_udev}" = "true" ]; then
-    # Enable dumb-udev instead of udevd
-    print_step_header "Enable dumb-udev service"
-    sed -i 's|^command.*=.*$|command=start-dumb-udev.sh|' /etc/supervisor.d/udev.ini
-    sed -i 's|^autostart.*=.*$|autostart=true|' /etc/supervisor.d/udev.ini
+    # Check if user wants to use fake-udev instead of dumb-udev
+    if [ "${USE_FAKE_UDEV:-false}" = "true" ]; then
+        # Enable fake-udev instead of udevd
+        print_step_header "Enable fake-udev service"
+        sed -i 's|^command.*=.*$|command=start-fake-udev.sh|' /etc/supervisor.d/udev.ini
+        sed -i 's|^autostart.*=.*$|autostart=true|' /etc/supervisor.d/udev.ini
+    else
+        # Enable dumb-udev instead of udevd
+        print_step_header "Enable dumb-udev service"
+        sed -i 's|^command.*=.*$|command=start-dumb-udev.sh|' /etc/supervisor.d/udev.ini
+        sed -i 's|^autostart.*=.*$|autostart=true|' /etc/supervisor.d/udev.ini
+    fi
 fi
 
 
