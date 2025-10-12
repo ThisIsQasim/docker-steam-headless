@@ -391,6 +391,9 @@ RUN \
 COPY --from=m1k1o/neko:base /usr/bin/neko /usr/bin/neko
 COPY --from=m1k1o/neko:base /var/www /var/www
 
+# Copy fake-udev from games-on-whales/wolf image
+COPY --from=gameonwhales/wolf:stable /usr/bin/fake-udev /usr/bin/fake-udev
+
 # Various other tools
 ARG DUMB_INIT_VERSION=1.2.5
 ARG DUMB_UDEV_VERSION=64d1427
