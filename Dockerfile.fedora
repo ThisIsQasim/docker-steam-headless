@@ -340,6 +340,7 @@ RUN \
 RUN \
     echo "**** Install useful HW monitoring tools ****" \
         && dnf install -y \
+            cpu-x \
             htop \
             libva-utils \
             vdpauinfo \
