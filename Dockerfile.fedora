@@ -57,8 +57,7 @@ RUN \
             vim \
             wget \
             xmlstarlet \
-            xz-5.6.3 \
-    && dnf versionlock add -y xz-5.6.3 \
+            xz \
     && \
     echo "**** Install python ****" \
         && dnf install -y \
