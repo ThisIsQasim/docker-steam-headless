@@ -58,7 +58,6 @@ RUN \
             wget \
             xmlstarlet \
             xz \
-    && dnf versionlock add -y xz \
     && \
     echo "**** Install python ****" \
         && dnf install -y \
