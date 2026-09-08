@@ -1,4 +1,4 @@
-FROM fedora:42
+FROM fedora:45
 LABEL maintainer="Josh.5 <jsunnex@gmail.com>"
 
 # Update locale
@@ -8,6 +8,7 @@ RUN \
             glibc-langpack-en \
         && echo 'LANG=en_US.UTF-8' > /etc/locale.conf \
         && echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen \
+        && echo 'en_GB.UTF-8 UTF-8' >> /etc/locale.gen \
     && \
     echo "**** Section cleanup ****" \
         && dnf clean all \
@@ -57,8 +58,7 @@ RUN \
             vim \
             wget \
             xmlstarlet \
-            xz-5.6.3 \
-    && dnf versionlock add -y xz-5.6.3 \
+            xz \
     && \
     echo "**** Install python ****" \
         && dnf install -y \
@@ -222,10 +222,16 @@ RUN \
     && \
     echo
 
-# Add support for flatpaks
+# Add support for flatpaks and D-Bus system services
 ENV \
     XDG_DATA_DIRS="/home/default/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/"
 RUN \
+    echo "**** Install D-Bus system services for desktop integration ****" \
+        && dnf install -y \
+            accountsservice \
+            polkit \
+            polkit-pkla-compat \
+    && \
     echo "**** Install flatpak support ****" \
         && dnf install -y \
             flatpak \
@@ -240,20 +246,8 @@ RUN \
     echo
 
 # Install Web Frontend
-ARG NODE_VERSION="v20"
 ARG FRONTEND_VERSION=a8eb92f
 RUN \
-    echo "**** Install Node ${NODE_VERSION} ****" \
-        && mkdir -p /tmp/nodejs \
-        && rm -rf /opt/nodejs \
-        && wget -qO /tmp/nodejs/nodejs.tar.xz \
-            "https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/node-$(wget -qO- https://nodejs.org/dist/latest-${NODE_VERSION:?}.x/ | sed -nE 's|.*>node-(.*)-linux-x64\.tar.xz</a>.*|\1|p')-linux-x64.tar.xz" \
-        && tar -xJf /tmp/nodejs/nodejs.tar.xz -C /tmp/nodejs --strip-components=1 \
-        && mv /tmp/nodejs /opt/nodejs \
-        && ln -sf /opt/nodejs/bin/node /usr/local/bin/node \
-        && ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm \
-        && ln -sf /opt/nodejs/bin/npx /usr/local/bin/npx \
-    && \
     echo "**** Fetch Web Frontend ****" \
         && mkdir -p /opt \
         && cd /opt \
