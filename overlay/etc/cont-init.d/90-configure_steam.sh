@@ -97,23 +97,35 @@ if [ "${ENABLE_STEAM:-}" = "true" ]; then
     fi
 
     # Ensuring Steam Play is enabled for all titles
-    CONFIG_VDF="${USER_HOME:?}/.steam/steam/config/config.vdf"
+    #
+    # NOTE: these seed files are written under .local/share/Steam (the real
+    # data dir), never under .steam/steam. On a fresh install .steam/steam
+    # doesn't exist yet, and Steam's own bin_steam.sh bootstrap needs to
+    # create it as a symlink to .local/share/Steam via `ln -fns`. `ln -f`
+    # cannot replace an existing directory with a symlink, so if this
+    # cont-init.d script (which always runs before Steam's first launch)
+    # were to `mkdir -p .steam/steam/...` here, it would permanently block
+    # that symlink setup and Steam would fail every launch with "Couldn't
+    # set up Steam data". Writing through .local/share/Steam instead reaches
+    # the identical files once the symlink exists, without ever creating
+    # anything at .steam/steam ourselves.
+    CONFIG_VDF="${USER_HOME:?}/.local/share/Steam/config/config.vdf"
     if [ ! -f "${CONFIG_VDF}" ]; then
         print_step_header "Initializing Steam config"
         mkdir -p "$(dirname "${CONFIG_VDF}")"
         echo "${default_steam_config}" >"${CONFIG_VDF}"
-        chown -R "${USER:?}:${USER:?}" "${USER_HOME:?}/.steam"
+        chown -R "${USER:?}:${USER:?}" "${USER_HOME:?}/.local/share/Steam"
     else
         print_step_header "Steam config already exists, skipping initialization"
     fi
 
     # Ensure Steam library folder is set to /mnt/games if not already
-    LIBRARY_VDF="${USER_HOME:?}/.steam/steam/steamapps/libraryfolders.vdf"
+    LIBRARY_VDF="${USER_HOME:?}/.local/share/Steam/steamapps/libraryfolders.vdf"
     if [ ! -f "${LIBRARY_VDF}" ]; then
         print_step_header "Initializing Steam library"
         mkdir -p "$(dirname "${LIBRARY_VDF}")"
         echo "${default_steam_library_config}" >"${LIBRARY_VDF}"
-        chown -R "${USER:?}:${USER:?}" "${USER_HOME:?}/.steam"
+        chown -R "${USER:?}:${USER:?}" "${USER_HOME:?}/.local/share/Steam"
         # Only if we have mounted a /mnt/games path, then make the default games library for steam
         if [ -d "/mnt/games" ]; then
             mkdir -p "/mnt/games/GameLibrary/Steam/steamapps"
